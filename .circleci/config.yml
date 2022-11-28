@@ -85,12 +85,91 @@
 #        これで、このリポジトリでさらに多くのアクションを実行できます。
 
 # -------------------------------------------
+  # version: 2.1
+  # jobs:
+  #   # running commands on a basic image
+  #   Hello-World:
+  #     docker:
+  #       - image: cimg/base:2021.04
+  #         auth:
+  #           username: mydockerhub-user
+  #           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+  #     steps:
+  #       - run:
+  #           name: Saying Hello
+  #           command: |
+  #             echo 'Hello World!'
+  #             echo 'This is the delivery pipeline'
+  #   # fetching code from the repo
+  #   Fetch-Code:
+  #     docker:
+  #       - image: cimg/base:2021.04
+  #         auth:
+  #           username: mydockerhub-user
+  #           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+  #     steps:
+  #       - checkout
+  #       - run:
+  #           name: Getting the Code
+  #           command: |
+  #             ls -al
+  #             echo '^^^Your repo files^^^'
+  #   # running a node container
+  #   Using-Node:
+  #     docker:
+  #       - image: cimg/node:17.2
+  #         auth:
+  #           username: mydockerhub-user
+  #           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+  #     steps:
+  #       - run:
+  #           name: Running the Node Container
+  #           command: |
+  #             node -v
+  # workflows:
+  #   Example-Workflow:
+  #     jobs:
+  #       - Hello-World
+  #       - Fetch-Code:
+  #           requires:
+  #             - Hello-World
+  #       - Using-Node:
+  #           requires:
+  #             - Fetch-Code
+
+# この例では 3 つのジョブが含まれています。
+#     こうしたステップをジョブに分離することで、そのそれぞれを異なる環境で実行できるようになります。
+# 上記サンプルコードの各行について、以下で解説します。
+# 3 行目: # (ハッシュ) 記号をコメントの前に置くことにより
+#     config.yml ファイルにコメントを追加できます。
+# 4-15 行目: 最初のジョブは Hello-World です。
+#     パート 1 でのように、基本的なイメージ内で 2 つのコマンドを実行します。
+# 17 行目: 2 つ目のジョブは Fetch-Code です。 
+#     これは、_Hello-World_job に合わせてインデントされます。
+# 18-19 行目: Fetch-Code ジョブは、Git 互換の基本的なイメージを使用します。
+# 23-29 行目: このコードはパート 2 から繰り返されていますが、ここでは別個のジョブです。
+# 31 行目: 3 つ目のジョブは Using-Node です。
+# 32-33 行目: この Using-Node ジョブは、cimg/node:17.2 という Docker イメージを使用します。 
+#     このイメージには、ブラウザーと他の便利なツールと共に、Node の バージョン 17.2 が含まれています。
+# 37-41 行目: これまでのジョブ同様に、run ステップがあります。 
+#     ここでは、コマンド node -v がコンテナで実行する Node のバージョンを出力します。
+# 42-43 行目: この行は、Example-Workflow というワークフローを作成します。
+#     ワークフローは、ジョブのリストとその実行順を定義します。
+# 44-45 行目: これらの行は最初のジョブである Hello-World を指定します。
+# 46-48 行目: Fetch-Code ジョブ用の構文は少し異なります。
+#     ジョブ名の後ろには requires: が続き、その後ろに requires ステートメントが続きます。
+#     この行は、Fetch-Code ジョブを実行する前に、
+#     Hello-World ジョブを正常に実行する必要があることを示します。
+# 49-51 行目: 最初のジョブは Using-Node です。 
+#     上記と同様に、このジョブもその前のジョブ、 Fetch-Code が正常に完了している必要があります。
+
+# -----------------------------------------------------------
   version: 2.1
   jobs:
     # running commands on a basic image
     Hello-World:
       docker:
-        - image: cimg/base:2021.04
+        - image: alpine:3.15
           auth:
             username: mydockerhub-user
             password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
@@ -126,6 +205,18 @@
             name: Running the Node Container
             command: |
               node -v
+    Now-Complete:
+      docker:
+        - image: alpine:3.15
+          auth:
+            username: mydockerhub-user
+            password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+      steps:
+        - run:
+            name: Approval Complete
+            command: |
+              echo 'The work is now complete.'
+  
   workflows:
     Example-Workflow:
       jobs:
@@ -136,29 +227,20 @@
         - Using-Node:
             requires:
               - Fetch-Code
+        - Hold-for-Approval:
+            type: approval
+            requires:
+              - Using-Node
+              - Fetch-Code
+        - Now-Complete:
+            requires:
+              - Hold-for-Approval
 
-# この例では 3 つのジョブが含まれています。
-#     こうしたステップをジョブに分離することで、そのそれぞれを異なる環境で実行できるようになります。
-# 上記サンプルコードの各行について、以下で解説します。
-# 3 行目: # (ハッシュ) 記号をコメントの前に置くことにより
-#     config.yml ファイルにコメントを追加できます。
-# 4-15 行目: 最初のジョブは Hello-World です。
-#     パート 1 でのように、基本的なイメージ内で 2 つのコマンドを実行します。
-# 17 行目: 2 つ目のジョブは Fetch-Code です。 
-#     これは、_Hello-World_job に合わせてインデントされます。
-# 18-19 行目: Fetch-Code ジョブは、Git 互換の基本的なイメージを使用します。
-# 23-29 行目: このコードはパート 2 から繰り返されていますが、ここでは別個のジョブです。
-# 31 行目: 3 つ目のジョブは Using-Node です。
-# 32-33 行目: この Using-Node ジョブは、cimg/node:17.2 という Docker イメージを使用します。 
-#     このイメージには、ブラウザーと他の便利なツールと共に、Node の バージョン 17.2 が含まれています。
-# 37-41 行目: これまでのジョブ同様に、run ステップがあります。 
-#     ここでは、コマンド node -v がコンテナで実行する Node のバージョンを出力します。
-# 42-43 行目: この行は、Example-Workflow というワークフローを作成します。
-#     ワークフローは、ジョブのリストとその実行順を定義します。
-# 44-45 行目: これらの行は最初のジョブである Hello-World を指定します。
-# 46-48 行目: Fetch-Code ジョブ用の構文は少し異なります。
-#     ジョブ名の後ろには requires: が続き、その後ろに requires ステートメントが続きます。
-#     この行は、Fetch-Code ジョブを実行する前に、
-#     Hello-World ジョブを正常に実行する必要があることを示します。
-# 49-51 行目: 最初のジョブは Using-Node です。 
-#     上記と同様に、このジョブもその前のジョブ、 Fetch-Code が正常に完了している必要があります。
+# 64-68 行目: これにより、Hold-for-Approval という新しいジョブが作成されます。
+#     type で approval と指定されています
+#     そのため、CircleCI でこのジョブを手動で承認することが求められます。
+#     これは、それまでのジョブが期待どおりに実行されたかどうかを確認する場合に便利です。
+#     例えば、Web サイトを公開する前にテストサーバー上で正常に見えるかどうかを確認できます。
+#     または、高コストのジョブを実行する前に、人間による確認を行いたい場合などです。
+# 69-71 行目: この最後のジョブ Now-Complete は、Hold-for-Approval が正常に完了
+#     していることを前提とし、CircleCI でその前のジョブを承認した場合にのみ実行されます。
