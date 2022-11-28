@@ -1,26 +1,55 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
+# # Use the latest 2.1 version of CircleCI pipeline process engine.
+# # See: https://circleci.com/docs/2.0/configuration-reference
+# version: 2.1
+
+# # Define a job to be invoked later in a workflow.
+# # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+# jobs:
+#   say-hello:
+#     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+#     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+#     docker:
+#       - image: cimg/base:stable
+#     # Add steps to the job
+#     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+#     steps:
+#       - checkout
+#       - run:
+#           name: "Say hello"
+#           command: "echo Hello, World!"
+
+# # Invoke jobs via workflows
+# # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+# workflows:
+#   say-hello-workflow:
+#     jobs:
+#       - say-hello
+
+# --------------------------------------
 version: 2.1
-
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+  build:
     docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+      - image: alpine:3.15
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
     steps:
-      - checkout
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+          name: The First Step
+          command: |
+            echo 'Hello World!'
+            echo 'This is the delivery pipeline'
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
-workflows:
-  say-hello-workflow:
-    jobs:
-      - say-hello
+# 1 行目: 使用している CircleCI プラットフォームのバージョンを示します。 2.1 が最新のバージョンです。
+# 2 行目: jobs レベルには、子ジョブのコレクションが含まれ、ジョブを表しています。 これらのジョブの名前を指定します (build、test、deploy など)。
+# 3 行目: build は、jobs コレクションの最初の子ジョブです。 このサンプルでは、build は唯一のジョブでもあります。
+# 4 行目: これは、ジョブのコマンドが実行されるコンテナに対し Docker イメージを使用していることを示します。
+# 5 行目: これが Docker イメージです。 このサンプルでは、Alpine Linux に基づいたミニマムイメージである alpine:3.15 を示します。
+# 6-8 行目: Docker レジストリの認証情報を記載します。 この部分はオプションです。 詳細は、 Docker の認証付きプルの使用 を参照して下さい。
+# 9 行目: steps コレクションは、run ディレクティブのリストです。
+# 10 行目: 各 run ディレクティブは、宣言された順に実行されます。
+# 11 行目: name 属性は、警告、エラー、出力などを返す際に関連情報を提供します。 name は、ビルドプロセス内のアクションとしてわかりやすいものにする必要があります。
+# 12 行目: command 属性は、実行するシェルコマンドのリストです。 最初のパイプ | は、複数行のシェルコマンドがあることを示します。
+# 13 行目: ビルドシェルに Hello World! を出力します。
+# 14 行目: This is the delivery pipeline と出力します。
