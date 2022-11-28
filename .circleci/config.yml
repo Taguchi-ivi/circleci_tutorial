@@ -53,3 +53,33 @@ jobs:
 # 12 行目: command 属性は、実行するシェルコマンドのリストです。 最初のパイプ | は、複数行のシェルコマンドがあることを示します。
 # 13 行目: ビルドシェルに Hello World! を出力します。
 # 14 行目: This is the delivery pipeline と出力します。
+
+# ----------------------------------------
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: cimg/base:2021.04
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+    steps:
+      - checkout
+      - run:
+          name: The First Step
+          command: |
+            echo 'Hello World!'
+            echo 'This is the delivery pipeline'
+      - run:
+          name: The Second Step
+          command: |
+            ls -al
+            echo '^^^The files in your repo^^^'
+
+# 2 つの小さな変更により、設定ファイルの機能が著しく向上します。
+# 5 行目: この行は、Git をサポートする Docker イメージを示します。 
+#      cimg/base:2021.04 は、基本的なジョブを実行する Ubuntu ベースの小さなイメージです。
+# 10 行目: checkout コマンドは、Git リポジトリからコードをフェッチします。
+# 16-20 行目: build ジョブのこの 2 つ目のステップは、
+#        すでにチェックアウトされているリポジトリの内容を、(ls -al を使用して) リストします。 
+#        これで、このリポジトリでさらに多くのアクションを実行できます。
